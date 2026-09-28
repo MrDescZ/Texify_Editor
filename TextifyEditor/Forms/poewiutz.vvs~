@@ -1,0 +1,393 @@
+﻿using DarkModeForms;
+using DiscordRPC;
+using Nova_Studio.Classes;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+using System.Drawing.Drawing2D;
+using System.Windows.Forms;
+
+namespace Nova_Studio.Forms
+{
+    public partial class MainForm : Form
+    {
+        #region Fields
+
+        private DiscordRpcClient client;
+
+        private DarkModeCS dm = null;
+        private SettingsForm settings;
+
+        Dictionary<PictureBox, float> zoomValues = new Dictionary<PictureBox, float>();
+        Dictionary<PictureBox, bool> hoverStates = new Dictionary<PictureBox, bool>();
+
+
+
+        #endregion
+
+        #region Constructor
+
+        public MainForm()
+        {
+            InitializeComponent();
+            fakeProgressBar.Alignment = ToolStripItemAlignment.Right;
+
+            // Dark Mode
+            /*dm = new DarkModeCS(this)
+            {
+
+                ColorMode = DarkModeCS.DisplayMode.DarkMode
+
+            };*/
+
+            fadeTimer.Interval = 20;
+            fadeTimer.Tick += fadeTimer_Tick;
+
+            RegisterPictureBox(arcPictureBox);
+            RegisterPictureBox(sfoPictureBox);
+        }
+
+        #endregion
+
+        #region Discord RPC
+
+        private void SetGame(string clientId, string details, string state, string imageKey, string imageText)
+        {
+            client?.Dispose();
+            client = new DiscordRpcClient(clientId);
+            client.Initialize();
+
+            client.SetPresence(new RichPresence
+            {
+                Details = details,
+                State = state,
+                Assets = new Assets
+                {
+                    LargeImageKey = imageKey,
+                    LargeImageText = imageText
+                }
+            });
+        }
+
+        private async Task InitializeDiscordRPCStatus()
+        {
+            rpcStatusLabel.Text = "Connecting to Discord..."; 
+            rpcStatusLabel.ForeColor = Color.Blue;
+
+            await Task.Delay(500);
+
+            if (!await IsInternetAvailable() || !IsDiscordRunning())
+            {
+                rpcStatusLabel.Text = "RPC: Disabled";
+                rpcStatusLabel.ForeColor = Color.Red;
+                return;
+            }
+
+            rpcStatusLabel.Text = "RPC: Connected";
+            rpcStatusLabel.ForeColor = Color.Green;
+            return;
+        }
+
+        private async Task<bool> IsInternetAvailable()
+        {
+            try
+            {
+                using var client = new TcpClient();
+                var task = client.ConnectAsync("1.1.1.1", 53);
+                var result = await Task.WhenAny(task, Task.Delay(1500));
+                if (result != task || !client.Connected) return false;
+            }
+            catch { return false; }
+
+            try
+            {
+                using HttpClient httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+                httpClient.DefaultRequestHeaders.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true };
+                HttpResponseMessage response = await httpClient.GetAsync("https://discord.com/api/v10");
+                return response.IsSuccessStatusCode;
+            }
+            catch { return false; }
+        }
+
+        private bool IsDiscordRunning()
+        {
+            return Process.GetProcessesByName("Discord").Any() || Process.GetProcessesByName("discord").Any();
+
+        }
+
+        #endregion
+
+        #region Events
+
+        private async void Form1_Load(object sender, EventArgs e)
+        {
+            Timer rpcTimer = new Timer { Interval = 10000 };
+            rpcTimer.Tick += async (s, ev) => await InitializeDiscordRPCStatus();
+            rpcTimer.Start();
+            await InitializeDiscordRPCStatus();
+        }
+
+        private void Form1_Paint(object sender, PaintEventArgs e)
+        {
+            using (LinearGradientBrush brush = new LinearGradientBrush(
+                  this.ClientRectangle,
+                  Color.FromArgb(40, 128, 40),   // top color
+                  Color.FromArgb(25, 25, 25),   // bottom color
+            LinearGradientMode.Vertical))
+            {
+                e.Graphics.FillRectangle(brush, this.ClientRectangle);
+            }
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            try { RPC.ClearPresence(); RPC.ShutDown(); } catch { }
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            RPC.ClearPresence();
+            RPC.SetMainFormPresence();
+        }
+
+        private async void rpcStatusLabel_Click(object sender, EventArgs e)
+        {
+            if (rpcStatusLabel.Text.StartsWith("RPC: Disabled"))
+                await InitializeDiscordRPCStatus();
+        }
+
+        #endregion
+
+        #region PictureBox DoubleClick Handlers
+
+        private ARCStudio arcForm;
+
+        private async void arcPictureBox_DoubleClick(object sender, EventArgs e)
+        {
+            fakeProgressBar.Value = 0;
+            fakeProgressBar.Visible = true;
+
+            for (int i = 0; i <= 100; i++)
+            {
+                fakeProgressBar.Value = i++;
+            }
+
+            fakeProgressBar.Visible = false;
+            await Task.Delay(500);
+            RPC.ClearPresence();
+            RPC.SetArcEditorPresence();
+
+            if (arcForm == null || arcForm.IsDisposed)
+            {
+                arcForm = new ARCStudio();
+                arcForm.Show();
+            }
+            else
+            {
+                arcForm.BringToFront();
+            }
+        }
+
+        private ParamSfo.SFOEditor sfoForm;
+        private async void sfoPictureBox_DoubleClick(object sender, EventArgs e)
+        {
+            fakeProgressBar.Value = 0;
+            fakeProgressBar.Visible = true;
+
+            for (int i = 0; i <= 100; i++)
+            {
+                fakeProgressBar.Value = i;
+            }
+
+            fakeProgressBar.Visible = false;
+            await Task.Delay(500);
+            RPC.ClearPresence();
+            RPC.SetParamSfoPresence();
+
+            if (sfoForm == null || sfoForm.IsDisposed)
+            {
+                sfoForm = new ParamSfo.SFOEditor();
+                sfoForm.Show();
+            }
+            else
+            {
+                sfoForm.BringToFront();
+            }
+        }
+
+        #endregion
+
+        #region Empty Handlers
+
+        private void toolStripMenuItem3_Click(object sender, EventArgs e) { }
+        private void pictureBox3_Click(object sender, EventArgs e) { }
+        private void rpcTimer_Tick(object sender, EventArgs e) { }
+
+        #endregion
+
+
+        private void RegisterPictureBox(PictureBox pb)
+        {
+            zoomValues[pb] = 1.0f;
+            hoverStates[pb] = false;
+
+            pb.MouseEnter += (s, e) => { hoverStates[pb] = true; fadeTimer.Start(); };
+            pb.MouseLeave += (s, e) => { hoverStates[pb] = false; fadeTimer.Start(); };
+            pb.Paint += PictureBox_Paint;
+        }
+
+        private async Task FakeProgress()
+        {
+            fakeProgressBar.Value = 0;
+            fakeProgressBar.Visible = true;
+
+            for (int i = 0; i <= 100; i++)
+            {
+                fakeProgressBar.Value = i;
+            }
+
+            fakeProgressBar.Visible = false;
+            await Task.Delay(500);
+        }
+
+        private void fadeTimer_Tick(object sender, EventArgs e)
+        {
+            bool anyAnimation = false;
+
+            foreach (var pb in zoomValues.Keys.ToList())
+            {
+                float targetScale = hoverStates[pb] ? 1.2f : 1.0f;
+                float current = zoomValues[pb];
+                float newScale = current + (targetScale - current) * 0.2f; // smooth ease
+
+                if (Math.Abs(newScale - current) > 0.001f)
+                {
+                    zoomValues[pb] = newScale;
+                    anyAnimation = true;
+                    pb.Invalidate();
+                }
+            }
+
+            if (!anyAnimation)
+                fadeTimer.Stop();
+        }
+
+
+        private void PictureBox_Paint(object sender, PaintEventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            float scale = zoomValues[pb];
+
+            if (pb.Image != null)
+            {
+                int newW = (int)(pb.Width * scale);
+                int newH = (int)(pb.Width * scale);
+                int x = (pb.Width - newW) / 2;
+                int y = (pb.Height - newH) / 2;
+
+                e.Graphics.CompositingQuality = CompositingQuality.HighQuality;
+                e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
+                e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                e.Graphics.DrawImage(pb.Image, new Rectangle(x, y, newW, newH));
+            }
+        }
+
+        private void panelSidebar_Paint(object sender, PaintEventArgs e)
+        {
+            using (LinearGradientBrush brush = new LinearGradientBrush(
+                panelSidebar.ClientRectangle,
+                Color.FromArgb(64, 64, 64),  // top
+                Color.FromArgb(25, 25, 25),  // bottom
+                LinearGradientMode.Vertical))
+            {
+                e.Graphics.FillRectangle(brush, panelSidebar.ClientRectangle);
+            }
+            using (LinearGradientBrush borderBrush = new LinearGradientBrush(
+                 panelSidebar.ClientRectangle,
+                Color.FromArgb(128, 128, 128),    // top
+                Color.FromArgb(100, 100, 100, 100), // bottom
+                LinearGradientMode.Horizontal))
+            {
+                using (Pen borderPen = new Pen(borderBrush, 2))
+                {
+                    e.Graphics.DrawRectangle(borderPen, panelSidebar.ClientRectangle.X, panelSidebar.ClientRectangle.Y,
+                                             panelSidebar.ClientRectangle.Width - 1, panelSidebar.ClientRectangle.Height - 1);
+                }
+            }
+        }
+
+        private void aboutBtn_Click(object sender, EventArgs e)
+        {
+
+            Messenger.MessageBox(
+               "DescZ: Developer\n\n" +
+               "EternalModz: Lead Designer/Helper\n\n" +
+               "ImVetreX: Support/Helper\n\n" +
+               "PhoenixARC: ARC Studio Source Code\n\n" +
+               "13xforever: PARAM.SFO Editor Source Code",
+               "Nova Studio Credits",
+               MessageBoxButtons.OK,
+               MessageBoxIcon.None
+           );
+        }
+
+        private async void settingsBtn_Click(object sender, EventArgs e)
+        {
+            fakeProgressBar.Value = 0;
+            fakeProgressBar.Visible = true;
+
+            for (int i = 0; i <= 100; i++)
+            {
+                fakeProgressBar.Value = i;
+            }
+
+            fakeProgressBar.Visible = false;
+            await Task.Delay(500);
+            if (settings == null || settings.IsDisposed)
+            {
+                settings = new SettingsForm();
+                settings.Show();
+            }
+            else
+            {
+                settings.BringToFront();
+            }
+        }
+
+        private void SettingsBtn_Paint(object sender, PaintEventArgs e)
+        {
+            System.Windows.Forms.Button btn = (System.Windows.Forms.Button)sender;
+
+            using (LinearGradientBrush brush = new LinearGradientBrush(
+                btn.ClientRectangle,
+                Color.FromArgb(60, 60, 128),
+                Color.FromArgb(35, 35, 35),
+                LinearGradientMode.Horizontal))
+            {
+                e.Graphics.FillRectangle(brush, btn.ClientRectangle);
+            }
+
+            TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, btn.ClientRectangle, Color.White,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+        }
+
+
+        private void restartBtn_Click(object sender, EventArgs e)
+        {
+            Application.Restart();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+    }
+}
