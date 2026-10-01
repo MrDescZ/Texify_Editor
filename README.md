@@ -30,8 +30,6 @@ It started as a personal project and has gradually grown into a full editor with
 * Custom borders and UI styling
 * Clean and responsive layout
 
-Textify Editor is designed to feel more like a modern desktop application rather than just a basic text editor.
-
 ### Performance
 
 * Lightweight
