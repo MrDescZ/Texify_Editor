@@ -62,11 +62,12 @@ It started as a personal project and has gradually grown into a full editor with
 <img width="1326" height="880" alt="Textify Editor Project Structure" src="https://github.com/user-attachments/assets/e7210a11-c4af-416a-8468-785b26f747bb" />
 
 ```text
-Textify Editor/
+TextifyEditor/
 ├── Forms/
 ├── Classes/
 ├── Rendering/
 ├── Resources/
+├── Template/
 ├── Properties/
 ├── Program.cs
 └── Textify Editor.sln
