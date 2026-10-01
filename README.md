@@ -81,10 +81,9 @@ TextifyEditor/
 
 To build Textify Editor from source, you'll need:
 
-* Windows
+* Windows 10 or 11
 * Visual Studio 2022 or newer
 * .NET Framework 4.8 Developer Pack
-* Git
 * Required NuGet packages
 
 ### Build
@@ -94,6 +93,7 @@ To build Textify Editor from source, you'll need:
 3. Select the desired build configuration.
 4. Build the solution.
 5. Run the application.
+6. Make your changes!
 
 ---
 
