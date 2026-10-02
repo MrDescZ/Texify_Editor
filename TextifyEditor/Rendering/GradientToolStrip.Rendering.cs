@@ -19,10 +19,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
         RoundedEdges = true;
         _cornerRadius = Math.Max(0, cornerRadius);
     }
-
-    // ==============================
-    // Helpers
-    // ==============================
+
     private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
     {
         var path = new GraphicsPath();
@@ -64,10 +61,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
             g.FillRectangle(brush, bounds);
         }
     }
-
-    // ==============================
-    // ToolStrip / MenuStrip / StatusStrip background
-    // ==============================
+
     protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
     {
         Rectangle rect = e.AffectedBounds;
@@ -83,8 +77,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
     }
 
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
-    {
-        // Fixed: disabled items previously rendered with the same bright color as enabled ones.
+    {
         e.TextColor = e.Item.Enabled ? Color.Gainsboro : Color.FromArgb(110, 110, 118);
         e.TextFont = new Font("Segoe UI", 9f);
         base.OnRenderItemText(e);
@@ -107,10 +100,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
                 LinearGradientMode.Horizontal, rounded: true);
         }
     }
-
-    // ==============================
-    // Menu & toolbar item hover / pressed / checked
-    // ==============================
+
     protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
     {
         Rectangle rect = new Rectangle(Point.Empty, e.Item.Size);
@@ -127,8 +117,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
             FillItemBackground(e.Graphics, rect,
                 Color.FromArgb(90, 100, 150), Color.FromArgb(60, 70, 120),
                 LinearGradientMode.Vertical, rounded: true);
-
-            // New: accent underline for top-level toolbar items (not dropdown menu rows).
+
             if (UseAccentUnderline && !(e.Item.Owner is ToolStripDropDown))
             {
                 using var accent = new Pen(Color.FromArgb(140, 160, 230), 2f);
@@ -136,8 +125,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
             }
         }
         else if (isChecked)
-        {
-            // New: toggled menu items now look visibly different when idle.
+        {
             FillItemBackground(e.Graphics, rect,
                 Color.FromArgb(55, 60, 90), Color.FromArgb(40, 45, 70),
                 LinearGradientMode.Vertical, rounded: true);
@@ -150,15 +138,12 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
     protected override void OnRenderButtonBackground(ToolStripItemRenderEventArgs e)
     {
         if (!e.Item.Enabled) return;
-
-        // Fixed: was e.Item.Bounds, which is in the wrong coordinate space here and
-        // caused the fill to be drawn offset from the actual button.
+
         Rectangle rect = new Rectangle(Point.Empty, e.Item.Size);
         bool isChecked = (e.Item as ToolStripButton)?.Checked == true;
 
         if (e.Item.Pressed)
-        {
-            // New: pressed state was previously unhandled (buttons gave no click feedback).
+        {
             FillItemBackground(e.Graphics, rect,
                 Color.FromArgb(55, 60, 95), Color.FromArgb(40, 45, 75),
                 LinearGradientMode.Vertical, rounded: true);
@@ -184,10 +169,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
             e.Graphics.SmoothingMode = old;
         }
     }
-
-    // ==============================
-    // New: submenu / dropdown arrows
-    // ==============================
+
     protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
     {
         // Previously fell back to the base renderer's default (near-black) arrow color,
@@ -195,10 +177,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
         e.ArrowColor = e.Item.Enabled ? Color.Gainsboro : Color.FromArgb(90, 90, 96);
         base.OnRenderArrow(e);
     }
-
-    // ==============================
-    // New: overflow ("»") button
-    // ==============================
+
     protected override void OnRenderOverflowButtonBackground(ToolStripItemRenderEventArgs e)
     {
         Rectangle rect = new Rectangle(Point.Empty, e.Item.Size);
@@ -222,10 +201,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
                 LinearGradientMode.Vertical, rounded: false);
         }
     }
-
-    // ==============================
-    // New: move-handle grip
-    // ==============================
+
     protected override void OnRenderGrip(ToolStripGripRenderEventArgs e)
     {
         Rectangle rect = e.GripBounds;
@@ -250,10 +226,7 @@ public class GradientToolStripRenderer : ToolStripProfessionalRenderer
                 e.Graphics.FillEllipse(dotBrush, x, y, dot, dot);
         }
     }
-
-    // ==============================
-    // Custom separators (toolbar + menus)
-    // ==============================
+
     protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
     {
         Rectangle r = e.Item.ContentRectangle;
