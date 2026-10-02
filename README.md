@@ -8,13 +8,15 @@ It started as a personal project and has gradually grown into a full editor with
 
 ---
 
+<img width="1172" height="837" alt="Screenshot 2026-10-01 201653" src="https://github.com/user-attachments/assets/9c44708e-89bc-4270-8ad3-693dbae6ba03" />
+
+
 ## Features
 
 ### Editor
 
 * Syntax highlighting
 * Line numbers
-* Multiple file support
 * Search & replace
 * File opening and saving
 * Recent files
